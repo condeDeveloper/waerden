@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.so }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        so: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      # Os testes primeiro: sao eles que prendem os numeros das tabelas.
+      - name: Testes
+        run: dotnet test testes/Waerden.Testes/Waerden.Testes.csproj -c Release --nologo
+
+      # Este passo quebra sozinho se a busca com retrocesso e a forca bruta
+      # deixarem de concordar: a comparacao esta dentro do medidor.
+      - name: Duas cores, progressoes de tres termos
+        run: dotnet run --project ferramentas/Medidor/Medidor.csproj -c Release -- duas
+
+      - name: O que desistir cedo economiza
+        run: dotnet run --project ferramentas/Medidor/Medidor.csproj -c Release -- custo
+
+      - name: Tres cores, onde a forca bruta nao cabe
+        run: dotnet run --project ferramentas/Medidor/Medidor.csproj -c Release -- tres
+
+      - name: Os numeros de Van der Waerden
+        run: dotnet run --project ferramentas/Medidor/Medidor.csproj -c Release -- numero
+
+      - name: Quantas progressoes sobram na melhor coloracao
+        run: dotnet run --project ferramentas/Medidor/Medidor.csproj -c Release -- melhor
